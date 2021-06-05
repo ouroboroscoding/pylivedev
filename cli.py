@@ -31,5 +31,5 @@ import pylivedev
 #	return pylivedev.run(sys.argv[1:]) == False and 1 or 0
 
 sys.exit(
-	pylivedev.run(sys.argv[1:]) == False and 1 or 0
+	pylivedev.main(sys.argv[1:]) == False and 1 or 0
 )
