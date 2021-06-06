@@ -14,6 +14,9 @@ __created__		= "2021-06-05"
 import ast
 import os
 
+# Constants
+DEBUG = False
+
 def exists(name, folder=None):
 	"""Exists
 
@@ -26,6 +29,8 @@ def exists(name, folder=None):
 	Returns
 		bool|str
 	"""
+
+	if DEBUG: print('exists(%s, %s)' % (name, folder))
 
 	# If we have a local folder and it doesn't end in /
 	if folder and folder[-1:] != '/':
@@ -89,6 +94,8 @@ def find(file, file_list):
 	Returns:
 		None
 	"""
+
+	if DEBUG: print('find(%s, %s)' % (file, file_list))
 
 	# Open the file
 	with open(file) as oF:
