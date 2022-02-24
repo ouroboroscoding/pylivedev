@@ -14,7 +14,7 @@ setup(
 		'watchdog>=2.1.2'
 	],
 	entry_points={
-		'console_scripts': 'pylivedev=cli:main'
+		'console_scripts': ['pylivedev=pylivedev.__main__:cli']
 	},
 	zip_safe=True
 )

@@ -31,6 +31,8 @@ def main(conf):
 		bool
 	"""
 
+	print('Starting pylivedev')
+
 	# Init the list of apps
 	lApps = []
 
@@ -55,6 +57,8 @@ def main(conf):
 	except KeyboardInterrupt:
 		for o in lApps:
 			del o
+
+	print('\nGoodbye')
 
 	# Return OK
 	return True

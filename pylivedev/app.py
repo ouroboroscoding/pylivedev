@@ -12,6 +12,7 @@ __created__		= "2021-06-05"
 
 # Python imports
 import os
+import subprocess
 import sys
 
 # Pip imports
@@ -30,7 +31,7 @@ class App(FileSystemEventHandler):
 		object
 	"""
 
-	def __init__(self, name, command, mode=None, verbose=False):
+	def __init__(self, name, command, python=None, mode=None, arguments=None, unbuffered=False, verbose=False):
 		"""Constructor
 
 		Handles instantiating the App instance
@@ -38,7 +39,11 @@ class App(FileSystemEventHandler):
 		Arguments:
 			name (str): The name of the app
 			command (str): The command to run to start the script
+			python (str): The full path to the python to use
 			mode (str): The mode of script, 'script' or 'module'
+			arguments (list): Additional arguments to pass to the script
+			unbuffered (bool): If true, script will run in unbuffered mode for stdout/stderr
+			verbose (bool): If true, additional data will be displayed when running script
 
 		Returns:
 			App
@@ -46,14 +51,30 @@ class App(FileSystemEventHandler):
 
 		self._name = name
 		self._command = command
+		self._python = python or sys.executable
 		self._mode = mode and mode or 'script'
+		self._arguments = arguments
 		self._files = []
 		self._exec = None
+		self._unbuffered = unbuffered
 		self._verbose = verbose
 
 		# Create a new observer
 		self._observer = Observer()
 		self._observer.start()
+
+		# Generate the arguments to run the script/module
+		self._args = [self._python]
+		if self._unbuffered:
+			self._args.append('-u')
+		if self._mode == 'module':
+			self._args.append('-m')
+		self._args.append(self._command)
+		if self._arguments and isinstance(self._arguments, list):
+			self._args.extend(self._arguments)
+
+		if self._verbose:
+			print('The following args were generated: %s' % str(self._args))
 
 	def __del__(self):
 		"""Deconstructor
@@ -115,6 +136,9 @@ class App(FileSystemEventHandler):
 		# If it's a module
 		if self._mode == 'module':
 
+			if self._verbose:
+				print('Observing module')
+
 			# Convert . to /
 			sFile = self._command.replace('.', '/')
 
@@ -135,6 +159,9 @@ class App(FileSystemEventHandler):
 
 		# Else, it's a script
 		else:
+
+			if self._verbose:
+				print('Observing script')
 
 			# Check for the command as is
 			if os.path.exists(self._command):
@@ -165,8 +192,27 @@ class App(FileSystemEventHandler):
 		for s in self._files:
 			self._observer.schedule(self, s)
 
-		# Run the program
+		# Create the subprocess
+		try:
+			if self._verbose:
+				print('Creating subprocess')
 
+			self._process = subprocess.Popen(
+				self._args,
+				bufsize=0,
+				cwd=os.getcwd(),
+				env=os.environ,
+				stdout=sys.stdout,
+				stderr=sys.stderr
+			)
+
+		except OSError as e:
+			print('%s: invalid process\n%s' % (self._name, str(e.args)), file=sys.stderr)
+			return False
+
+		except ValueError as e:
+			print('%s: invalid arguments\n%s' % (self._name, str(e.args)), file=sys.stderr)
+			return False
 
 		# Return OK
 		return True
@@ -185,4 +231,29 @@ class App(FileSystemEventHandler):
 			print('Stopping %s' % self._name)
 
 		# Stop watching all associated files
+		if self._verbose:
+			print('\tStop observing files...', end='')
 		self._observer.unschedule_all()
+		if self._verbose:
+			print(' Done')
+
+		# Send a signal to the process to terminate
+		if self._verbose:
+			print('\tTerminating process...', end='')
+		self._process.terminate()
+
+		# Wait for the process to terminate
+		try:
+			self._process.wait(10)
+
+		# If it won't shut down, kill it
+		except subprocess.TimeoutExpired:
+			if self._verbose:
+				print('Processing not terminating, attempting to kill...', end='')
+			self._process.kill()
+
+		if self._verbose:
+			print(' Done')
+
+		# Delete the process
+		del self._process
