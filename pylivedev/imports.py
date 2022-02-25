@@ -74,6 +74,11 @@ def exists(name, folder=None):
 		if os.path.exists(sFile):
 			return sFile
 
+		# Does it exist as an __init__?
+		sInit = '%s/__init__.py' % '/'.join(lParts)
+		if os.path.exists(sInit):
+			return sInit
+
 		# Still doesn't exist? Let's take a piece off the parts and try again
 		lParts = lParts[0:-1]
 
