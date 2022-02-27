@@ -33,7 +33,7 @@ class App(FileSystemEventHandler):
 
 	def __init__(self, name, command, \
 					additional_files=None, arguments=None, mode=None, \
-					python=None, unbuffered=False, verbose=False):
+					python=None, unbuffered=True, verbose=False):
 		"""Constructor
 
 		Handles instantiating the App instance
