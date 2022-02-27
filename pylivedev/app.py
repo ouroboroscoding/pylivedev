@@ -31,7 +31,9 @@ class App(FileSystemEventHandler):
 		object
 	"""
 
-	def __init__(self, name, command, python=None, mode=None, arguments=None, unbuffered=False, verbose=False):
+	def __init__(self, name, command, \
+					additional_files=None, arguments=None, mode=None, \
+					python=None, unbuffered=False, verbose=False):
 		"""Constructor
 
 		Handles instantiating the App instance
@@ -39,9 +41,10 @@ class App(FileSystemEventHandler):
 		Arguments:
 			name (str): The name of the app
 			command (str): The command to run to start the script
-			python (str): The full path to the python to use
+			additional_files (str[]): Additional files to watch that aren't python imports
+			arguments (str[]): Additional arguments to pass to the script
 			mode (str): The mode of script, 'script' or 'module'
-			arguments (list): Additional arguments to pass to the script
+			python (str): The full path to the python to use
 			unbuffered (bool): If true, script will run in unbuffered mode for stdout/stderr
 			verbose (bool): If true, additional data will be displayed when running script
 
@@ -49,32 +52,26 @@ class App(FileSystemEventHandler):
 			App
 		"""
 
+		# Init configurable members
 		self._name = name
 		self._command = command
-		self._python = python or sys.executable
-		self._mode = mode and mode or 'script'
+		self._additional_files = additional_files
 		self._arguments = arguments
-		self._files = []
-		self._exec = None
+		self._mode = mode and mode or 'script'
+		self._python = python or sys.executable
 		self._unbuffered = unbuffered
 		self._verbose = verbose
+
+		# Init internal members
+		self._files = []
+		self._fresh_line = True
 
 		# Create a new observer
 		self._observer = Observer()
 		self._observer.start()
 
 		# Generate the arguments to run the script/module
-		self._args = [self._python]
-		if self._unbuffered:
-			self._args.append('-u')
-		if self._mode == 'module':
-			self._args.append('-m')
-		self._args.append(self._command)
-		if self._arguments and isinstance(self._arguments, list):
-			self._args.extend(self._arguments)
-
-		if self._verbose:
-			print('The following args were generated: %s' % str(self._args))
+		self._generate_args()
 
 	def __del__(self):
 		"""Deconstructor
@@ -86,9 +83,42 @@ class App(FileSystemEventHandler):
 		"""
 
 		# Stop the observer
-		self._observer.stop()
-		self._observer.join()
-		del self._observer
+		if self._observer:
+			self._observer.stop()
+			self._observer.join()
+			del self._observer
+
+	def _generate_args(self):
+		"""Generate Args
+
+		Private method to generate the full list of arguments based on the data
+		associated with the app
+
+		Returns:
+			None
+		"""
+
+		# Init the list with the python executable
+		self._args = [self._python]
+
+		# If we are running unbuffered
+		if self._unbuffered:
+			self._args.append('-u')
+
+		# If we are running a module
+		if self._mode == 'module':
+			self._args.append('-m')
+
+		# Add the script/module
+		self._args.append(self._command)
+
+		# If there's additional arguments to the script
+		if self._arguments and isinstance(self._arguments, list):
+			self._args.extend(self._arguments)
+
+		# If verbose, display list of arguments
+		if self._verbose:
+			print('The following args were generated: %s' % str(self._args))
 
 	def dispatch(self, event):
 		"""Dispatch
@@ -104,7 +134,7 @@ class App(FileSystemEventHandler):
 			event.event_type == 'modified' and \
 			event.src_path in self._files:
 
-			# If verbose mode is on
+			# If verbose mode is on, notify of a file change
 			if self._verbose:
 				print('%s has been modified' % event.src_path)
 
@@ -115,12 +145,20 @@ class App(FileSystemEventHandler):
 			self.start()
 
 	def join(self):
+		"""Join
+
+		Passes join message along to observer
+
+		Returns:
+			None
+		"""
 		self._observer.join()
 
 	def start(self):
 		"""Start
 
-		Starts the app
+		Starts the app by first parsing the imports and adding observers for
+		them, then running the actual process.
 
 		Returns
 			None
@@ -131,13 +169,13 @@ class App(FileSystemEventHandler):
 			print('Starting %s' % self._name)
 
 		# Clear the files
-		self._files = []
+		self._files = self._additional_files and self._additional_files[:] or []
 
 		# If it's a module
 		if self._mode == 'module':
 
 			if self._verbose:
-				print('Observing module')
+				print('\tobserving module')
 
 			# Convert . to /
 			sFile = self._command.replace('.', '/')
@@ -161,7 +199,7 @@ class App(FileSystemEventHandler):
 		else:
 
 			if self._verbose:
-				print('Observing script')
+				print('\tobserving script')
 
 			# Check for the command as is
 			if os.path.exists(self._command):
@@ -171,7 +209,7 @@ class App(FileSystemEventHandler):
 		if not self._files:
 
 			# Print error
-			print('Can not find anything to load for %s' % self._name, file=sys.stderr)
+			print('\tCan not find anything to load for %s' % self._name, file=sys.stderr)
 
 			# Return error
 			return False
@@ -184,9 +222,9 @@ class App(FileSystemEventHandler):
 
 		# If verbose mode is on
 		if self._verbose:
-			print('The following imports were found:')
+			print('\tthe following imports were found:')
 			for s in self._files:
-				print('\t%s' % s)
+				print('\t\t%s' % s)
 
 		# For each file, add a schedule
 		for s in self._files:
@@ -195,7 +233,7 @@ class App(FileSystemEventHandler):
 		# Create the subprocess
 		try:
 			if self._verbose:
-				print('Creating subprocess')
+				print('\tcreating subprocess...', end='')
 
 			self._process = subprocess.Popen(
 				self._args,
@@ -205,6 +243,9 @@ class App(FileSystemEventHandler):
 				stdout=sys.stdout,
 				stderr=sys.stderr
 			)
+
+			if self._verbose:
+				print(' done')
 
 		except OSError as e:
 			print('%s: invalid process\n%s' % (self._name, str(e.args)), file=sys.stderr)
@@ -220,7 +261,8 @@ class App(FileSystemEventHandler):
 	def stop(self):
 		"""Stop
 
-		Stop the app
+		Stops the app, first by removing all observers, then by stopping the
+		actual process
 
 		Returns:
 			None
@@ -232,14 +274,14 @@ class App(FileSystemEventHandler):
 
 		# Stop watching all associated files
 		if self._verbose:
-			print('\tStop observing files...', end='')
+			print('\tstop observing files...', end='')
 		self._observer.unschedule_all()
 		if self._verbose:
-			print(' Done')
+			print(' done')
 
 		# Send a signal to the process to terminate
 		if self._verbose:
-			print('\tTerminating process...', end='')
+			print('\tterminating process...', end='')
 		self._process.terminate()
 
 		# Wait for the process to terminate
@@ -253,7 +295,7 @@ class App(FileSystemEventHandler):
 			self._process.kill()
 
 		if self._verbose:
-			print(' Done')
+			print(' done')
 
 		# Delete the process
 		del self._process

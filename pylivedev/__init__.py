@@ -36,11 +36,22 @@ def main(conf):
 	# Init the list of apps
 	lApps = []
 
+	# Check for a defaults section
+	oDefaults = conf.pop('__defaults__', None)
+
 	# Go through each app in the config
 	for name in conf:
 
+		# If we have defaults, override them with the specific app config
+		if oDefaults:
+			oConf = {**oDefaults, **conf[name]}
+
+		# Else, just use the conf as is
+		else:
+			oConf = conf[name]
+
 		# Init the type and list of files associated
-		oApp = App(name, **conf[name])
+		oApp = App(name, **oConf)
 
 		# Start the app
 		if oApp.start():
@@ -56,6 +67,7 @@ def main(conf):
 			sleep(1)
 	except KeyboardInterrupt:
 		for o in lApps:
+			o.stop()
 			del o
 
 	print('\nGoodbye')
