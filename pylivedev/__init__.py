@@ -18,6 +18,7 @@ from time import sleep
 
 # Local imports
 from .app import App
+from .output import color
 
 def main(conf):
 	"""Main
@@ -31,7 +32,7 @@ def main(conf):
 		bool
 	"""
 
-	print('Starting pylivedev')
+	color('magenta', 'Starting PyLiveDev\n')
 
 	# Init the list of apps
 	lApps = []
@@ -70,7 +71,7 @@ def main(conf):
 			o.stop()
 			del o
 
-	print('\nGoodbye')
+	color('magenta', '\nGoodbye\n')
 
 	# Return OK
 	return True
