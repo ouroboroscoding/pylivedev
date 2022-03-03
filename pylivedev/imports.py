@@ -14,8 +14,8 @@ __created__		= "2021-06-05"
 import ast
 import os
 
-# Constants
-DEBUG = False
+# Local imports
+from . import output
 
 def exists(name, folder=None):
 	"""Exists
@@ -29,8 +29,6 @@ def exists(name, folder=None):
 	Returns
 		bool|str
 	"""
-
-	if DEBUG: print('exists(%s, %s)' % (name, folder))
 
 	# If we have a local folder and it doesn't end in /
 	if folder and folder[-1:] != '/':
@@ -100,67 +98,45 @@ def find(file, file_list):
 		None
 	"""
 
-	if DEBUG: print('find(%s, %s)' % (file, file_list))
-
 	# Open the file
 	with open(file) as oF:
 
 		# Get the abstract syntax tree for the file
-		oAST = ast.parse(oF.read(), file)
+		try:
+			oAST = ast.parse(oF.read(), file)
 
-		# Go through each node in the tree
-		for oNode in ast.iter_child_nodes(oAST):
+			# Go through each node in the tree
+			for oNode in ast.iter_child_nodes(oAST):
 
-			# If the instance is an import
-			if isinstance(oNode, ast.Import):
+				# If the instance is an import
+				if isinstance(oNode, ast.Import):
 
-				# Go through each name found
-				for oName in oNode.names:
+					# Go through each name found
+					for oName in oNode.names:
 
-					# Look for a file
-					mFile = exists(oName.name, os.path.dirname(file))
+						# Look for a file
+						mFile = exists(oName.name, os.path.dirname(file))
 
-					# If the file exists
-					if mFile:
+						# If the file exists
+						if mFile:
 
-						# If it doesn't exist already in the list
-						if mFile not in file_list:
+							# If it doesn't exist already in the list
+							if mFile not in file_list:
 
-							# Add it
-							file_list.append(mFile)
+								# Add it
+								file_list.append(mFile)
 
-							# And recurse
-							find(mFile, file_list)
+								# And recurse
+								find(mFile, file_list)
 
-			# If the instance is a from
-			elif isinstance(oNode, ast.ImportFrom):
+				# If the instance is a from
+				elif isinstance(oNode, ast.ImportFrom):
 
-				# If there's no module
-				if not oNode.module:
-					mFile = exists('__init__', os.path.dirname(file))
-				else:
-					mFile = exists(oNode.module, os.path.dirname(file))
-
-				# If the file exists
-				if mFile:
-
-					# If it doesn't exist already in the list
-					if mFile not in file_list:
-
-						# Add it
-						file_list.append(mFile)
-
-						# And recurse
-						find(mFile, file_list)
-
-				# Go through each name found
-				for oName in oNode.names:
-
-					# Look for a file
-					mFile = exists(
-						'%s.%s' % (oNode.module is not None and oNode.module or '', oName.name),
-						os.path.dirname(file)
-					)
+					# If there's no module
+					if not oNode.module:
+						mFile = exists('__init__', os.path.dirname(file))
+					else:
+						mFile = exists(oNode.module, os.path.dirname(file))
 
 					# If the file exists
 					if mFile:
@@ -173,3 +149,32 @@ def find(file, file_list):
 
 							# And recurse
 							find(mFile, file_list)
+
+					# Go through each name found
+					for oName in oNode.names:
+
+						# Look for a file
+						mFile = exists(
+							'%s.%s' % (oNode.module is not None and oNode.module or '', oName.name),
+							os.path.dirname(file)
+						)
+
+						# If the file exists
+						if mFile:
+
+							# If it doesn't exist already in the list
+							if mFile not in file_list:
+
+								# Add it
+								file_list.append(mFile)
+
+								# And recurse
+								find(mFile, file_list)
+
+		# Catch syntax errors from broken code
+		except SyntaxError as e:
+			output.error('Syntax Error parsing "%s" at line %d, column %d' % (
+				file,
+				e.args[1][1],
+				e.args[1][2]
+			))

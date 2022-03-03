@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
 	name='pylivedev',
-	version='0.1.0',
+	version='0.1.1',
 	url='https://github.com/ouroboroscoding/pylivedev',
 	description='PyLiveDev is used to keep track of files associated with your script so it can be re-started if any file is updated.',
 	keywords=['python','live', 'development'],
@@ -11,6 +11,7 @@ setup(
 	license='Apache-2.0',
 	packages=['pylivedev'],
 	install_requires=[
+		'termcolor>=1.1.0',
 		'watchdog>=2.1.2'
 	],
 	entry_points={
