@@ -20,7 +20,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 # Local imports
-from . import imports
+from . import imports, output
 
 class App(FileSystemEventHandler):
 	"""App
@@ -118,7 +118,7 @@ class App(FileSystemEventHandler):
 
 		# If verbose, display list of arguments
 		if self._verbose:
-			print('The following args were generated: %s' % str(self._args))
+			output.verbose('The following args were generated: %s\n' % str(self._args))
 
 	def dispatch(self, event):
 		"""Dispatch
@@ -136,7 +136,7 @@ class App(FileSystemEventHandler):
 
 			# If verbose mode is on, notify of a file change
 			if self._verbose:
-				print('%s has been modified' % event.src_path)
+				output.verbose('%s has been modified\n' % event.src_path)
 
 			# Stop the app
 			self.stop()
@@ -166,16 +166,16 @@ class App(FileSystemEventHandler):
 
 		# If verbose mode is on
 		if self._verbose:
-			print('Starting %s' % self._name)
+			output.verbose('Starting %s\n' % self._name)
 
 		# Clear the files
-		self._files = self._additional_files and self._additional_files[:] or []
+		self._files = []
 
 		# If it's a module
 		if self._mode == 'module':
 
 			if self._verbose:
-				print('\tobserving module')
+				output.verbose('\tobserving module\n')
 
 			# Convert . to /
 			sFile = self._command.replace('.', '/')
@@ -199,7 +199,7 @@ class App(FileSystemEventHandler):
 		else:
 
 			if self._verbose:
-				print('\tobserving script')
+				output.verbose('\tobserving script\n')
 
 			# Check for the command as is
 			if os.path.exists(self._command):
@@ -209,7 +209,7 @@ class App(FileSystemEventHandler):
 		if not self._files:
 
 			# Print error
-			print('\tCan not find anything to load for %s' % self._name, file=sys.stderr)
+			output.error('Can not find anything to load for %s' % self._name)
 
 			# Return error
 			return False
@@ -222,18 +222,34 @@ class App(FileSystemEventHandler):
 
 		# If verbose mode is on
 		if self._verbose:
-			print('\tthe following imports were found:')
+			output.verbose('\tthe following imports were found:\n')
 			for s in self._files:
-				print('\t\t%s' % s)
+				output.verbose('\t\t%s\n' % s)
 
-		# For each file, add a schedule
+		# Add additional files if the exist
+		if self._additional_files:
+
+			# Verbose
+			if self._verbose:
+				output.verbose('\tthe following additional files were found:\n')
+
+			# Go through each file and make sure it exists
+			for sFile in self._additional_files:
+				if os.path.exists(sFile):
+					self._files.append(sFile)
+					if self._verbose:
+						output.verbose('\t\t%s\n' % sFile)
+				else:
+					output.error('"%s" does not exist' % sFile)
+
+		# For each file, add to the obverver
 		for s in self._files:
 			self._observer.schedule(self, s)
 
 		# Create the subprocess
 		try:
 			if self._verbose:
-				print('\tcreating subprocess...', end='')
+				output.verbose('\tcreating subprocess...')
 
 			self._process = subprocess.Popen(
 				self._args,
@@ -245,14 +261,14 @@ class App(FileSystemEventHandler):
 			)
 
 			if self._verbose:
-				print(' done')
+				output.verbose(' done\n')
 
 		except OSError as e:
-			print('%s: invalid process\n%s' % (self._name, str(e.args)), file=sys.stderr)
+			output.error('%s: invalid process\n%s' % (self._name, str(e.args)))
 			return False
 
 		except ValueError as e:
-			print('%s: invalid arguments\n%s' % (self._name, str(e.args)), file=sys.stderr)
+			output.error('%s: invalid arguments\n%s' % (self._name, str(e.args)))
 			return False
 
 		# Return OK
@@ -270,32 +286,35 @@ class App(FileSystemEventHandler):
 
 		# If verbose mode is on
 		if self._verbose:
-			print('Stopping %s' % self._name)
+			output.verbose('Stopping %s\n' % self._name)
 
 		# Stop watching all associated files
 		if self._verbose:
-			print('\tstop observing files...', end='')
+			output.verbose('\tstop observing files...')
 		self._observer.unschedule_all()
 		if self._verbose:
-			print(' done')
+			output.verbose(' done\n')
 
-		# Send a signal to the process to terminate
-		if self._verbose:
-			print('\tterminating process...', end='')
-		self._process.terminate()
+		# If we have a process
+		if self._process:
 
-		# Wait for the process to terminate
-		try:
-			self._process.wait(10)
-
-		# If it won't shut down, kill it
-		except subprocess.TimeoutExpired:
+			# Send a signal to the process to terminate
 			if self._verbose:
-				print('Processing not terminating, attempting to kill...', end='')
-			self._process.kill()
+				output.verbose('\tterminating process...')
+			self._process.terminate()
 
-		if self._verbose:
-			print(' done')
+			# Wait for the process to terminate
+			try:
+				self._process.wait(10)
+
+			# If it won't shut down, kill it
+			except subprocess.TimeoutExpired:
+				if self._verbose:
+					output.verbose('\nProcessing not terminating, attempting to kill...')
+				self._process.kill()
+
+			if self._verbose:
+				output.verbose(' done\n')
 
 		# Delete the process
 		del self._process
