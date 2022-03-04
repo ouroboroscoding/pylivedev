@@ -1,6 +1,7 @@
 from setuptools import setup
 
 long_description="""![PyLiveDev](https://ouroboroscoding.com/pylivedev/PyLiveDev_128.png)
+
 Python Live Development tool.
 
 ## Description
