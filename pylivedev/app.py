@@ -209,7 +209,7 @@ class App(FileSystemEventHandler):
 		if not self._files:
 
 			# Print error
-			output.error('Can not find anything to load for %s' % self._name)
+			output.error('Can not find anything to load for %s\n' % self._name)
 
 			# Return error
 			return False
@@ -240,7 +240,7 @@ class App(FileSystemEventHandler):
 					if self._verbose:
 						output.verbose('\t\t%s\n' % sFile)
 				else:
-					output.error('"%s" does not exist' % sFile)
+					output.error('"%s" does not exist\n' % sFile)
 
 		# For each file, add to the obverver
 		for s in self._files:
@@ -264,11 +264,11 @@ class App(FileSystemEventHandler):
 				output.verbose(' done\n')
 
 		except OSError as e:
-			output.error('%s: invalid process\n%s' % (self._name, str(e.args)))
+			output.error('%s: invalid process\n%s\n' % (self._name, str(e.args)))
 			return False
 
 		except ValueError as e:
-			output.error('%s: invalid arguments\n%s' % (self._name, str(e.args)))
+			output.error('%s: invalid arguments\n%s\n' % (self._name, str(e.args)))
 			return False
 
 		# Return OK
