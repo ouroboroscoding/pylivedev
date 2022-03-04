@@ -173,7 +173,7 @@ def find(file, file_list):
 
 		# Catch syntax errors from broken code
 		except SyntaxError as e:
-			output.error('Syntax Error parsing "%s" at line %d, column %d' % (
+			output.error('Syntax Error parsing "%s" at line %d, column %d\n' % (
 				file,
 				e.args[1][1],
 				e.args[1][2]

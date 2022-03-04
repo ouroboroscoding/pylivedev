@@ -1,4 +1,4 @@
-# PyLiveDev
+![PyLiveDev](https://ouroboroscoding.com/pylivedev/PyLiveDev_128.png)
 Python Live Development tool.
 
 ## Description
@@ -14,8 +14,6 @@ It works by you creating a JSON configuration file called `.pylivedev` in the ro
 ```console
 foo@bar:~$ pip install pylivedev
 ```
-
-be sure to run the above as root/admin
 
 ## Run
 
