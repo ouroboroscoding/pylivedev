@@ -9,7 +9,7 @@ from __future__ import print_function
 
 __author__		= "Chris Nasr"
 __copyright__	= "Ouroboros Coding Inc."
-__version__		= "1.0.0"
+__version__		= "1.1.0"
 __email__		= "chris@ouroboroscoding.com"
 __created__		= "2021-06-05"
 
@@ -38,7 +38,7 @@ def main(conf):
 	lApps = []
 
 	# Check for a defaults section
-	oDefaults = conf.pop('__defaults__', None)
+	oDefaults = conf.pop('__defaults__', {})
 
 	# Go through each app in the config
 	for name in conf:

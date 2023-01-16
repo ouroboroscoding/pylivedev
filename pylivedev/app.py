@@ -6,7 +6,7 @@ Handles the class passed around with all data related to a single script
 
 __author__		= "Chris Nasr"
 __copyright__	= "Ouroboros Coding Inc."
-__version__		= "1.0.0"
+__version__		= "1.1.0"
 __email__		= "chris@ouroboroscoding.com"
 __created__		= "2021-06-05"
 
@@ -33,7 +33,7 @@ class App(FileSystemEventHandler):
 
 	def __init__(self, name, command, \
 					additional_files=None, arguments=None, mode=None, \
-					python=None, unbuffered=True, verbose=False):
+					tracked=True, python=None, unbuffered=True, verbose=False):
 		"""Constructor
 
 		Handles instantiating the App instance
@@ -44,6 +44,7 @@ class App(FileSystemEventHandler):
 			additional_files (str[]): Additional files to watch that aren't python imports
 			arguments (str[]): Additional arguments to pass to the script
 			mode (str): The mode of script, 'script' or 'module'
+			tracked (bool): If true, the script is tracked through associated files changes
 			python (str): The full path to the python to use
 			unbuffered (bool): If true, script will run in unbuffered mode for stdout/stderr
 			verbose (bool): If true, additional data will be displayed when running script
@@ -58,6 +59,7 @@ class App(FileSystemEventHandler):
 		self._additional_files = additional_files
 		self._arguments = arguments
 		self._mode = mode and mode or 'script'
+		self._tracked = tracked
 		self._python = python or sys.executable
 		self._unbuffered = unbuffered
 		self._verbose = verbose
@@ -66,9 +68,10 @@ class App(FileSystemEventHandler):
 		self._files = []
 		self._fresh_line = True
 
-		# Create a new observer
-		self._observer = Observer()
-		self._observer.start()
+		# Create a new observer if we are tracking
+		if self._tracked:
+			self._observer = Observer()
+			self._observer.start()
 
 		# Generate the arguments to run the script/module
 		self._generate_args()
@@ -83,7 +86,7 @@ class App(FileSystemEventHandler):
 		"""
 
 		# Stop the observer
-		if self._observer:
+		if self._tracked and self._observer:
 			self._observer.stop()
 			self._observer.join()
 			del self._observer
@@ -177,23 +180,26 @@ class App(FileSystemEventHandler):
 			if self._verbose:
 				output.verbose('\tobserving module\n')
 
-			# Convert . to /
-			sFile = self._command.replace('.', '/')
+			# If we want to track file changes
+			if self._tracked:
 
-			# Does the file exist as is?
-			if os.path.exists('%s.py' % sFile):
-				self._files.append('%s.py' % sFile)
+				# Convert . to /
+				sFile = self._command.replace('.', '/')
 
-			# Else, look for special python module file(s)
-			else:
+				# Does the file exist as is?
+				if os.path.exists('%s.py' % sFile):
+					self._files.append('%s.py' % sFile)
 
-				# Check for an __init__.py file
-				if os.path.exists('%s/__init__.py' % sFile):
-					self._files.append('%s/__init__.py' % sFile)
+				# Else, look for special python module file(s)
+				else:
 
-				# Check for a __main__.py file
-				if os.path.exists('%s/__main__.py' % sFile):
-					self._files.append('%s/__main__.py' % sFile)
+					# Check for an __init__.py file
+					if os.path.exists('%s/__init__.py' % sFile):
+						self._files.append('%s/__init__.py' % sFile)
+
+					# Check for a __main__.py file
+					if os.path.exists('%s/__main__.py' % sFile):
+						self._files.append('%s/__main__.py' % sFile)
 
 		# Else, it's a script
 		else:
@@ -201,50 +207,56 @@ class App(FileSystemEventHandler):
 			if self._verbose:
 				output.verbose('\tobserving script\n')
 
-			# Check for the command as is
-			if os.path.exists(self._command):
-				self._files.append(self._command)
+			# If we want to track file changes
+			if self._tracked:
 
-		# If we have no files
-		if not self._files:
+				# Check for the command as is
+				if os.path.exists(self._command):
+					self._files.append(self._command)
 
-			# Print error
-			output.error('Can not find anything to load for %s\n' % self._name)
+		# If we are tracking
+		if self._tracked:
 
-			# Return error
-			return False
+			# If we have no files
+			if not self._files:
 
-		# Go through each found file
-		for sFile in list(self._files):
+				# Print error
+				output.error('Can not find anything to load for %s\n' % self._name)
 
-			# Look for more files within it
-			imports.find(sFile, self._files)
+				# Return error
+				return False
 
-		# If verbose mode is on
-		if self._verbose:
-			output.verbose('\tthe following imports were found:\n')
-			for s in self._files:
-				output.verbose('\t\t%s\n' % s)
+			# Go through each found file
+			for sFile in list(self._files):
 
-		# Add additional files if the exist
-		if self._additional_files:
+				# Look for more files within it
+				imports.find(sFile, self._files)
 
-			# Verbose
+			# If verbose mode is on
 			if self._verbose:
-				output.verbose('\tthe following additional files were found:\n')
+				output.verbose('\tthe following imports were found:\n')
+				for s in self._files:
+					output.verbose('\t\t%s\n' % s)
 
-			# Go through each file and make sure it exists
-			for sFile in self._additional_files:
-				if os.path.exists(sFile):
-					self._files.append(sFile)
-					if self._verbose:
-						output.verbose('\t\t%s\n' % sFile)
-				else:
-					output.error('"%s" does not exist\n' % sFile)
+			# Add additional files if the exist
+			if self._additional_files:
 
-		# For each file, add to the obverver
-		for s in self._files:
-			self._observer.schedule(self, s)
+				# Verbose
+				if self._verbose:
+					output.verbose('\tthe following additional files were found:\n')
+
+				# Go through each file and make sure it exists
+				for sFile in self._additional_files:
+					if os.path.exists(sFile):
+						self._files.append(sFile)
+						if self._verbose:
+							output.verbose('\t\t%s\n' % sFile)
+					else:
+						output.error('"%s" does not exist\n' % sFile)
+
+			# For each file, add to the obverver
+			for s in self._files:
+				self._observer.schedule(self, s)
 
 		# Create the subprocess
 		try:
@@ -288,12 +300,15 @@ class App(FileSystemEventHandler):
 		if self._verbose:
 			output.verbose('Stopping %s\n' % self._name)
 
-		# Stop watching all associated files
-		if self._verbose:
-			output.verbose('\tstop observing files...')
-		self._observer.unschedule_all()
-		if self._verbose:
-			output.verbose(' done\n')
+		# If we are tracking
+		if self._tracked:
+
+			# Stop watching all associated files
+			if self._verbose:
+				output.verbose('\tstop observing files...')
+			self._observer.unschedule_all()
+			if self._verbose:
+				output.verbose(' done\n')
 
 		# If we have a process
 		if self._process:
