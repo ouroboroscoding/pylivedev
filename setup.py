@@ -5,7 +5,7 @@ with open('README.md', 'r') as oF:
 
 setup(
 	name='pylivedev',
-	version='1.0.0',
+	version='1.1.0',
 	description='PyLiveDev is used to keep track of files associated with your script so it can be re-started if any file is updated.',
 	long_description=long_description,
 	long_description_content_type='text/markdown',

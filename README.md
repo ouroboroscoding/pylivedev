@@ -29,6 +29,7 @@ foo@bar:~$ pylivedev
 	"rest": {
 		"command": "rest",
 		"mode": "module",
+		"tracked": false,
 		"python": "/venv/my_project/bin/python",
 		"arguments": ["-v"],
 		"additional_files": ["config.json"],
@@ -42,6 +43,7 @@ foo@bar:~$ pylivedev
 | ------ | ------ | ------ | ------ |
 | command | String | Yes | The name of the script or module to run as a process. e.g. "services.rest", "main.py" |
 | mode | "module" \| "script" | No | Tells pylivedev whether you are trying to run a stand alone script, or a python module. Defaults to "script". |
+| tracked | Boolean | No | When true, proccess is tracked via file changes. Use false for static or external modules. Defaults to true. |
 | python | String | No | The full path to the python intepreter to use to run your process. Defaults to the python interpreter running pylivedev. |
 | arguments | String[] | No | An array of additional arguments passed to the process. |
 | additional_files | String[] | No | An array of additional files to be watched/observed for changes. |
