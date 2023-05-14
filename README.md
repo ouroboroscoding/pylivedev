@@ -1,4 +1,4 @@
-![PyLiveDev](https://ouroboroscoding.com/pylivedev/PyLiveDev_128.png)
+![PyLiveDev](https://ouroboroscoding.s3.us-east-2.amazonaws.com/logos/PyLiveDev_128.png)
 
 Python Live Development tool.
 
