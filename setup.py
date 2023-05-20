@@ -1,11 +1,18 @@
 from setuptools import setup
 
+# Shared long description
 with open('README.md', 'r') as oF:
 	long_description=oF.read()
 
+# Shared version
+with open(convert_path('mds3/version.py')) as oF:
+	d = {}
+	exec(oF.read(), d)
+	version = d['__version__']
+
 setup(
 	name='pylivedev',
-	version='1.1.0',
+	version=version,
 	description='PyLiveDev is used to keep track of files associated with your script so it can be re-started if any file is updated.',
 	long_description=long_description,
 	long_description_content_type='text/markdown',
