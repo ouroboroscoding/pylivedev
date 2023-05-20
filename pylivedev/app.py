@@ -64,6 +64,10 @@ class App(FileSystemEventHandler):
 		self._unbuffered = unbuffered
 		self._verbose = verbose
 
+		# If the mode is exe, override the tracked
+		if self._mode == 'exe':
+			self._tracked = False
+
 		# Init internal members
 		self._files = []
 		self._fresh_line = True
@@ -101,19 +105,28 @@ class App(FileSystemEventHandler):
 			None
 		"""
 
-		# Init the list with the python executable
-		self._args = [self._python]
+		# If we are running an exe
+		if self._mode == 'exe':
 
-		# If we are running unbuffered
-		if self._unbuffered:
-			self._args.append('-u')
+			# Init the list with the command passed
+			self._args = [self._command]
 
-		# If we are running a module
-		if self._mode == 'module':
-			self._args.append('-m')
+		# Else, we are running a python file
+		else:
 
-		# Add the script/module
-		self._args.append(self._command)
+			# Init the list with the python executable
+			self._args = [self._python]
+
+			# If we are running unbuffered
+			if self._unbuffered:
+				self._args.append('-u')
+
+			# If we are running a module
+			if self._mode == 'module':
+				self._args.append('-m')
+
+			# Add the script/module
+			self._args.append(self._command)
 
 		# If there's additional arguments to the script
 		if self._arguments and isinstance(self._arguments, list):
