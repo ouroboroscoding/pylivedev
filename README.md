@@ -1,5 +1,7 @@
 ![PyLiveDev](https://ouroboroscoding.s3.us-east-2.amazonaws.com/logos/PyLiveDev_128.png)
 
+[![pypi version](https://img.shields.io/pypi/v/pylivedev.svg)](https://pypi.org/project/pylivedev) ![MIT License](https://img.shields.io/pypi/l/pylivedev.svg)
+
 Python Live Development tool.
 
 ## Description
@@ -15,6 +17,14 @@ It works by you creating a JSON configuration file called `.pylivedev` in the ro
 ```console
 foo@bar:~$ pip install pylivedev
 ```
+
+## Warning
+
+If you are using PyLiveDev on a Linux kernel 2.6+, you may at some point run into an issue where the program quits, either quite immediately, or as more and more files are added to your project. This is due to a hard limit in an underlying library. When this happens add/adjust the following setting in your `/etc/sysctl.conf` file (will require root access):
+
+```fs.inotify.max_user_watches=16384```
+
+The default value is 8192, so adjust accordingly then reboot. Increase as necessary until PyLiveDev stops crashing.
 
 ## Run
 
@@ -119,8 +129,3 @@ The **PyLiveDev** would end up with the following list of files to watch/observe
 Any time any of these files is saved/changed on the system, **PyLiveDev** would shut down the "main" process, re-parse the module looking for imports, and then restart the process.
 
 ***Note*** system and pip imports will not be added to the list, like `time` in the above example. In most cases system files don't change often and it would waste resources to watch them. If you update a pip library, or update python, it's best to shut down **PyLiveDev** [CRTL-C] and restart it.
-
-## License
-
-Apache License
-Version 2.0
