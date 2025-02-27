@@ -26,8 +26,10 @@ more files are added to your project. This is due to a hard limit in an
 underlying library. When this happens add/adjust the following settings in your
 `/etc/sysctl.conf` file (will require root access):
 
-```fs-file-max=2048
-fs.inotify.max_user_watches=16384```
+```
+fs-file-max=2048
+fs.inotify.max_user_watches=16384
+```
 
 The defaults are 1024 and 8192, so adjust accordingly then reboot. Increase as
 necessary until PyLiveDev stops crashing.
