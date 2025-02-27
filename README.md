@@ -20,11 +20,22 @@ foo@bar:~$ pip install pylivedev
 
 ## Warning
 
-If you are using PyLiveDev on a Linux kernel 2.6+, you may at some point run into an issue where the program quits, either quite immediately, or as more and more files are added to your project. This is due to a hard limit in an underlying library. When this happens add/adjust the following setting in your `/etc/sysctl.conf` file (will require root access):
+If you are using PyLiveDev on a Linux kernel 2.6+, you may at some point run
+into an issue where the program quits, either quite immediately, or as more and
+more files are added to your project. This is due to a hard limit in an
+underlying library. When this happens add/adjust the following settings in your
+`/etc/sysctl.conf` file (will require root access):
 
-```fs.inotify.max_user_watches=16384```
+```fs-file-max=2048
+fs.inotify.max_user_watches=16384```
 
-The default value is 8192, so adjust accordingly then reboot. Increase as necessary until PyLiveDev stops crashing.
+The defaults are 1024 and 8192, so adjust accordingly then reboot. Increase as
+necessary until PyLiveDev stops crashing.
+
+Note, that if you use vscode, it has a tendency to eat up as many fs connectors
+as it can, and is usually the culprit in causing everything else to fail. Be
+aware of how many folders in your workspace, and make sure you hide things like
+node_modules if you're using node in your projects.
 
 ## Run
 
