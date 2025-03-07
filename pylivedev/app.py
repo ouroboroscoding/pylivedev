@@ -269,7 +269,12 @@ class App(FileSystemEventHandler):
 
 			# For each file, add to the obverver
 			for s in self._files:
-				self._observer.schedule(self, s)
+				try:
+					self._observer.schedule(self, s)
+				except OSError as e:
+					output.error('File "%s" could not be tracked: %s\n' % (
+						s, str(e.args)
+					))
 
 		# Create the subprocess
 		try:

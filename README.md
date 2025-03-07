@@ -21,23 +21,29 @@ foo@bar:~$ pip install pylivedev
 ## Warning
 
 If you are using PyLiveDev on a Linux kernel 2.6+, you may at some point run
-into an issue where the program quits, either quite immediately, or as more and
-more files are added to your project. This is due to a hard limit in an
-underlying library. When this happens add/adjust the following settings in your
-`/etc/sysctl.conf` file (will require root access):
+into an issue where you see red errors like the following:
+
+```File "some/path.py" could not be tracked: (24, 'inotify instance limit reached')```
+
+```File "some/path.py" could not be tracked: (28, 'inotify watch limit reached')```
+
+This is due to limits in an underlying library. When this happens adjust
+the following settings in your `/etc/sysctl.conf` file (will require root
+access):
 
 ```
-fs-file-max=2048
+fs.inotify.max_user_instances=256
 fs.inotify.max_user_watches=16384
 ```
 
-The defaults are 1024 and 8192, so adjust accordingly then reboot. Increase as
-necessary until PyLiveDev stops crashing.
+The defaults are 128 and 8192, so adjust accordingly then reboot. Increase as
+necessary until PyLiveDev stops reporting issues tracking files.
 
-Note, that if you use vscode, it has a tendency to eat up as many fs connectors
-as it can, and is usually the culprit in causing everything else to fail. Be
-aware of how many folders in your workspace, and make sure you hide things like
-node_modules if you're using node in your projects.
+Note, that if you use vscode, it will try to track every single file in a
+project, be aware of how many files/folders in your projects, and make sure you
+hide things like node_modules if you're using node in your projects. Many node
+based auto-build development systems, create-react-app, vite, nextjs, and others
+will also watch files, so it's a common problem for developers.
 
 ## Run
 
@@ -132,7 +138,7 @@ class Main(Rest):
 	pass
 ```
 
-The **PyLiveDev** would end up with the following list of files to watch/observe for changes
+**PyLiveDev** would end up with the following list of files to watch/observe for changes
 
 - config.json
 - nodes/rest/main.py
